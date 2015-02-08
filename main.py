@@ -1,4 +1,5 @@
 from twisted.internet import gtk3reactor
+from ChannelDialog import ChannelDialog
 from GtkChannelListBoxItem import GtkChannelListBoxItem
 
 gtk3reactor.install()
@@ -38,10 +39,32 @@ class Client(irc.IRCClient):
         self.msg_entry.connect("key-press-event", self.keypress)
         self.parent.chan_list.connect("row-selected", self.channel_selected)
 
+        button = Gtk.Button("Join Channel")
+        button.connect("clicked", self.on_join_clicked)
+        self.parent.hb.pack_end(button)
+        self.parent.show_all()
+
         self.addChannel("Server")
 
         self.log("[Connected established at %s]" %
                  time.asctime(time.localtime(time.time())), "Server")
+
+    def on_join_clicked(self, widget):
+        dialog = ChannelDialog(self.parent)
+        dialog.connect('response', self.dialog_response_join)
+        dialog.show()
+
+    def dialog_response_join(self, dialog, response):
+
+        if response == Gtk.ResponseType.OK:
+            channel = dialog.channel.get_text()
+
+            dialog.destroy()
+
+            self.join(channel)
+
+        elif response == Gtk.ResponseType.CANCEL:
+            dialog.destroy()
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
@@ -163,14 +186,14 @@ class MainWindow(Gtk.Window):
         self.set_border_width(10)
         self.set_default_size(800, 600)
 
-        hb = Gtk.HeaderBar()
-        hb.set_show_close_button(True)
-        hb.props.title = "Gnome IRC"
-        self.set_titlebar(hb)
+        self.hb = Gtk.HeaderBar()
+        self.hb.set_show_close_button(True)
+        self.hb.props.title = "Gnome IRC"
+        self.set_titlebar(self.hb)
 
         button = Gtk.Button("Quick Connect")
         button.connect("clicked", self.on_connect_clicked)
-        hb.pack_start(button)
+        self.hb.pack_start(button)
 
         builder = Gtk.Builder()
         builder.add_from_file("main_view.glade")
