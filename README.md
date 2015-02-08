@@ -1,6 +1,6 @@
 # Gnome IRC
 
-![Screenshot](http://images.rymate.co.uk/images/DFzZ6Mc.png)
+![Screenshot](http://images.rymate.co.uk/images/UemAOd6.png)
 
 Gnome IRC is a very early work in progress of an IRC Client for the GNOME desktop. 
 Currently it doesn't have many features.
