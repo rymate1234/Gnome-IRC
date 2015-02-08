@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from twisted.internet import gtk3reactor
 from ChannelDialog import ChannelDialog
 from GtkChannelListBoxItem import GtkChannelListBoxItem
