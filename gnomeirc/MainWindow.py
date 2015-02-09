@@ -18,13 +18,12 @@ from ConnectDialog import ConnectDialog
 from twisted.words.protocols import irc
 from twisted.internet import protocol
 
-if os.path.dirname(os.path.realpath(__file__)).startswith("/usr/"):
+if os.path.dirname(os.path.realpath(__file__)).startswith("/usr/local/"):
     DATADIR = "/usr/share/gnome-irc/"
-elif os.path.dirname(os.path.realpath(__file__)).startswith("/usr/local/"):
+elif os.path.dirname(os.path.realpath(__file__)).startswith("/usr/"):
     DATADIR = "/usr/local/share/gnome-irc/"
 else:
     DATADIR = ""
-
 
 class Client(irc.IRCClient):
 
