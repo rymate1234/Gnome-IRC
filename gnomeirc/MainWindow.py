@@ -1,20 +1,27 @@
 #!/usr/bin/python
 
 from twisted.internet import gtk3reactor
+
 from ChannelDialog import ChannelDialog
 from GtkChannelListBoxItem import GtkChannelListBoxItem
+
 
 gtk3reactor.install()
 
 from twisted.internet import reactor
 
-from gi.repository import Gtk, GObject
-import time
+from gi.repository import Gtk
+import time, os
 from ConnectDialog import ConnectDialog
 
 # twisted imports
 from twisted.words.protocols import irc
 from twisted.internet import protocol
+
+if os.path.dirname(os.path.realpath(__file__)).startswith("/usr/"):
+    DATADIR = "/usr/share/gnome-irc/"
+else:
+    DATADIR = ""
 
 
 class Client(irc.IRCClient):
@@ -200,7 +207,7 @@ class MainWindow(Gtk.Window):
         self.hb.pack_start(button)
 
         builder = Gtk.Builder()
-        builder.add_from_file("data/main_view.glade")
+        builder.add_from_file(DATADIR + "data/main_view.glade")
         self.message_entry = builder.get_object("message_entry")
         self.messages_view = builder.get_object("messages")
         self.ircview = builder.get_object("ircviewpane")
