@@ -8,6 +8,6 @@ class ChannelDialog(Gtk.Dialog):
                              Gtk.STOCK_OK, Gtk.ResponseType.OK), use_header_bar=1)
 
         builder = Gtk.Builder()
-        builder.add_from_file("channel.glade")
+        builder.add_from_file("data/channel.glade")
         self.channel = builder.get_object("channel")
         self.get_content_area().add(builder.get_object("ChannelForm"))
