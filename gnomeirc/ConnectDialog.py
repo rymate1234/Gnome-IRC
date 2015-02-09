@@ -3,12 +3,11 @@ import os
 from gi.repository import Gtk
 
 if os.path.dirname(os.path.realpath(__file__)).startswith("/usr/local/"):
-    DATADIR = "/usr/share/gnome-irc/"
-elif os.path.dirname(os.path.realpath(__file__)).startswith("/usr/"):
     DATADIR = "/usr/local/share/gnome-irc/"
+elif os.path.dirname(os.path.realpath(__file__)).startswith("/usr/"):
+    DATADIR = "/usr/share/gnome-irc/"
 else:
     DATADIR = ""
-
 
 class ConnectDialog(Gtk.Dialog):
     def __init__(self, parent):
