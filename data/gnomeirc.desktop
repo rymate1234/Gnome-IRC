@@ -4,6 +4,6 @@ Type=Application
 Version=1.0
 Name=Gnome IRC
 Comment=IRC Client for the Gnome Desktop
-Exec=python /usr/bin/gnome-irc
+Exec=gnome-irc
 Icon=/usr/share/gnome-irc/irc.png
 Terminal=false

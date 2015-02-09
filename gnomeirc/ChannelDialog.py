@@ -2,11 +2,13 @@ import os
 
 from gi.repository import Gtk
 
-
 if os.path.dirname(os.path.realpath(__file__)).startswith("/usr/"):
     DATADIR = "/usr/share/gnome-irc/"
+elif os.path.dirname(os.path.realpath(__file__)).startswith("/usr/local/"):
+    DATADIR = "/usr/local/share/gnome-irc/"
 else:
     DATADIR = ""
+
 
 class ChannelDialog(Gtk.Dialog):
     def __init__(self, parent):
