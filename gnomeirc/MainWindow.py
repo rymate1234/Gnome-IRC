@@ -76,6 +76,8 @@ class Client(irc.IRCClient):
 
     # callbacks for events
     def keypress(self, widget, event):
+        adj = self.parent.messages_scroll.get_vadjustment()
+        adj.set_value(adj.get_upper() - adj.get_page_size())
         if event.keyval == 65293:
             self.msg(self.selected, widget.get_text())
             self.log("<%s> %s" % (self.nickname, widget.get_text()), self.selected)
@@ -109,7 +111,11 @@ class Client(irc.IRCClient):
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
         if not any(channel in s for s in self.channels):
-            self.addChannel(channel) # multiple channels for znc
+            self.addChannel(channel)  # multiple messages_scrollchannels for znc
+
+        if channel == self.selected:
+            adj = self.parent.messages_scroll.get_vadjustment()
+            adj.set_value(adj.get_upper() - adj.get_page_size())
 
         user = user.split('!', 1)[0]
         self.log("<%s> %s" % (user, msg), channel)
@@ -211,6 +217,7 @@ class MainWindow(Gtk.Window):
         builder.add_from_file(DATADIR + "data/main_view.glade")
         self.message_entry = builder.get_object("message_entry")
         self.messages_view = builder.get_object("messages")
+        self.messages_scroll = builder.get_object("messages_scroll")
         self.ircview = builder.get_object("ircviewpane")
         self.chan_list = builder.get_object("channel_list")
 
