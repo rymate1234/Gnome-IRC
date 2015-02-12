@@ -95,6 +95,7 @@ class Client(irc.IRCClient):
 
         self.msg_entry.connect("key-press-event", self.keypress)
         self.parent.chan_list.connect("row-selected", self.channel_selected)
+        self.parent.messages_view.connect('size-allocate', self.on_new_line)
 
         button = Gtk.Button("Join Channel")
         button.connect("clicked", self.on_join_clicked)
@@ -107,6 +108,10 @@ class Client(irc.IRCClient):
         self.addChannel(channel)
         self.selected = channel
         self.log("[You have joined %s]" % channel, channel)
+
+    def on_new_line(self, widget, event, data=None):
+        adj = self.parent.messages_scroll.get_vadjustment()
+        adj.set_value(adj.get_upper() - adj.get_page_size())
 
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -202,7 +207,7 @@ class MainWindow(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title="Gnome IRC")
         self.set_border_width(10)
-        self.set_default_size(800, 600)
+        self.set_default_size(1024, 600)
 
         self.hb = Gtk.HeaderBar()
         self.hb.set_show_close_button(True)
