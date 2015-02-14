@@ -5,6 +5,7 @@ from twisted.internet import gtk3reactor
 from ChannelDialog import ChannelDialog
 from GtkChannelListBoxItem import GtkChannelListBoxItem
 
+from twisted.internet import defer
 
 gtk3reactor.install()
 
@@ -27,7 +28,8 @@ else:
 
 class Client(irc.IRCClient):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        self._namescallback = {}
         self.channels = {}
         self.selected = ""
 
@@ -172,6 +174,40 @@ class Client(irc.IRCClient):
         self.parent.chan_list.add(row)
         self.channels[channel] = Gtk.TextBuffer.new(None)
 
+
+    def names(self, channel):
+        channel = channel.lower()
+        d = defer.Deferred()
+        if channel not in self._namescallback:
+            self._namescallback[channel] = ([], [])
+
+        self._namescallback[channel][0].append(d)
+        self.sendLine("NAMES %s" % channel)
+        return d
+
+    def irc_RPL_NAMREPLY(self, prefix, params):
+        channel = params[2].lower()
+        nicklist = params[3].split(' ')
+
+        if channel not in self._namescallback:
+            return
+
+        n = self._namescallback[channel][1]
+        n += nicklist
+
+    def irc_RPL_ENDOFNAMES(self, prefix, params):
+        channel = params[1].lower()
+        if channel not in self._namescallback:
+            return
+
+        callbacks, namelist = self._namescallback[channel]
+
+        for cb in callbacks:
+            cb.callback(namelist)
+
+        del self._namescallback[channel]
+
+
 class IRCFactory(protocol.ClientFactory):
     """A factory for Clients.
 
@@ -214,9 +250,9 @@ class MainWindow(Gtk.Window):
         self.hb.props.title = "Gnome IRC"
         self.set_titlebar(self.hb)
 
-        button = Gtk.Button("Quick Connect")
-        button.connect("clicked", self.on_connect_clicked)
-        self.hb.pack_start(button)
+        self.connect_button = Gtk.Button("Quick Connect")
+        self.connect_button.connect("clicked", self.on_connect_clicked)
+        self.hb.pack_start(self.connect_button)
 
         builder = Gtk.Builder()
         builder.add_from_file(DATADIR + "data/main_view.glade")
@@ -227,7 +263,6 @@ class MainWindow(Gtk.Window):
         self.chan_list = builder.get_object("channel_list")
 
         self.add(self.ircview)
-        self.connect("delete_event", self.on_quit)
         self.connect("delete_event", self.on_quit)
 
     def on_connect_clicked(self, widget):
@@ -252,6 +287,11 @@ class MainWindow(Gtk.Window):
 
             # connect factory to this host and port
             reactor.connectTCP(server, port, factory)
+
+            # disable the button once connected, at least until we have a proper multiple server implementation
+            self.connect_button.set_sensitive(False);
+            self.connect_button.set_label("Connected to " + server);
+            win.show_all()
 
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
