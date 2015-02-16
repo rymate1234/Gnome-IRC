@@ -1,9 +1,10 @@
 # Gnome IRC
 
-![Screenshot](http://images.rymate.co.uk/images/UemAOd6.png)
+![Screenshot](http://images.rymate.co.uk/images/oQMnNYj.png)
 
-Gnome IRC is a very early work in progress of an IRC Client for the GNOME desktop. 
-Currently it doesn't have many features.
+Gnome IRC is an IRC Client currently in the alpha stage of development. it is designed for the GNOME deskto, but should work on most linux desktops with the right libraries installed!
+
+It's still early stages, but I've almost got the basics of an IRC client down! It even has support for ZNCs!
 
 ## Running
 You'll need a couple packages installed:
