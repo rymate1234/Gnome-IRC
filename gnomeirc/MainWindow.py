@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 from twisted.internet import gtk3reactor
 
-from ChannelDialog import ChannelDialog
-from GtkChannelListBoxItem import GtkChannelListBoxItem
+from gnomeirc.ChannelDialog import ChannelDialog
+from gnomeirc.GtkChannelListBoxItem import GtkChannelListBoxItem
 
 from twisted.internet import defer
 
@@ -11,9 +11,9 @@ gtk3reactor.install()
 
 from twisted.internet import reactor
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gio, cairo
 import time, os
-from ConnectDialog import ConnectDialog
+from gnomeirc.ConnectDialog import ConnectDialog
 
 # twisted imports
 from twisted.words.protocols import irc
@@ -30,6 +30,7 @@ class Client(irc.IRCClient):
 
     def __init__(self, *args, **kwargs):
         self._namescallback = {}
+        self._whoiscallback = {}
         self.channels = {}
         self.selected = ""
 
@@ -54,10 +55,107 @@ class Client(irc.IRCClient):
         self.log("[Connected established at %s]" %
                  time.asctime(time.localtime(time.time())), "Server")
 
+
+    def signedOn(self):
+        """Called when bot has succesfully signed on to server."""
+        self.log("Successfuly connected!", "Server")
+
+        self.msg_entry.connect("key-press-event", self.keypress)
+        self.parent.chan_list.connect("row-selected", self.channel_selected)
+        self.parent.messages_view.connect('size-allocate', self.on_new_line)
+
+        # Join Channel Button
+        button = Gtk.Button()
+
+        icon = Gio.ThemedIcon(name="list-add")
+        image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.BUTTON)
+        button.add(image)
+
+        button.connect("clicked", self.on_join_clicked)
+
+        # Users list button
+        button2 = Gtk.Button()
+
+        icon = Gio.ThemedIcon(name="avatar-default-symbolic")
+        image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.BUTTON)
+        button2.add(image)
+
+        self.users_button = button2
+
+        button2.connect("clicked", self.on_users_clicked)
+
+        self.parent.hb.pack_end(button)
+        self.parent.hb.pack_end(button2)
+        self.parent.show_all()
+
+        self.join(self.factory.channel)
+
     def on_join_clicked(self, widget):
         dialog = ChannelDialog(self.parent)
         dialog.connect('response', self.dialog_response_join)
         dialog.show()
+
+
+    def on_users_clicked(self, widget):
+        if not hasattr(self, "users_popover"):
+            builder = Gtk.Builder()
+            builder.add_from_file(DATADIR + "data/users_list.glade")
+            self.users_list = builder.get_object("users_list")
+            self.users_list_container = builder.get_object("users_list_container")
+            self.names(self.selected).addCallback(self.got_users)
+
+    def got_users(self, users):
+        users.sort()
+        self.users_popover = Gtk.Popover().new(self.users_button)
+        self.users_popover.set_border_width(6);
+        self.users_popover.set_position(Gtk.PositionType.TOP)
+        self.users_popover.set_modal(True)
+        self.users_popover.set_vexpand(False)
+        self.users_popover.connect("closed", self.users_list_closed)
+        self.users_popover.set_size_request(160,300)
+        self.populate_users_menu(users)
+        self.users_popover.add(self.users_list_container)
+        self.users_popover.show_all()
+
+    def populate_users_menu(self, users):
+        self.users_list_add("Operators", True)
+        ops = [user for user in users if user.startswith("@")]
+        for s in ops:
+            self.users_list_add(s)
+
+        self.users_list_add("Voiced", True)
+        voiced = [user for user in users if user.startswith("+")]
+        for s in voiced:
+            self.users_list_add(s)
+
+        self.users_list_add("Users", True)
+        users = [user for user in users if not(user.startswith("+") or user.startswith("@"))]
+        for s in users:
+            self.users_list_add(s)
+
+    def users_list_add(self, user, bold=False):
+        row = Gtk.ListBoxRow()
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        row.add(hbox)
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        hbox.pack_start(vbox, True, True, 0)
+
+        if bold:
+            label1 = Gtk.Label()
+            label1.set_markup("<b>" + user + "</b>")
+        else:
+            label1 = Gtk.Label(user, xalign=0)
+        vbox.pack_start(label1, True, True, 0)
+
+        row.show_all()
+        self.users_list.add(row)
+
+    def users_list_closed(self, *args):
+        self.users_popover.remove(self.users_list)
+        self.users_list.destroy()
+        del self.users_list
+        self.users_popover.destroy()
+        del self.users_popover
 
     def dialog_response_join(self, dialog, response):
 
@@ -91,21 +189,6 @@ class Client(irc.IRCClient):
         self.selected = selected.channel
         self.parent.messages_view.set_buffer(self.channels[selected.channel])
 
-    def signedOn(self):
-        """Called when bot has succesfully signed on to server."""
-        self.log("Successfuly connected!", "Server")
-
-        self.msg_entry.connect("key-press-event", self.keypress)
-        self.parent.chan_list.connect("row-selected", self.channel_selected)
-        self.parent.messages_view.connect('size-allocate', self.on_new_line)
-
-        button = Gtk.Button("Join Channel")
-        button.connect("clicked", self.on_join_clicked)
-        self.parent.hb.pack_end(button)
-        self.parent.show_all()
-
-        self.join(self.factory.channel)
-
     def joined(self, channel):
         self.addChannel(channel)
         self.selected = channel
@@ -137,9 +220,16 @@ class Client(irc.IRCClient):
     def irc_NICK(self, prefix, params):
         """Called when an IRC user changes their nickname."""
         old_nick = prefix.split('!')[0]
+        self.oldnickforcallback = old_nick
         new_nick = params[0]
-        self.log("%s is now known as %s" % (old_nick, new_nick), self.selected)
+        self.performWhois(new_nick).addCallback(self.got_channels)
 
+    def got_channels(self, params):
+        print params
+        chanlist = params[2].split(' ')
+        for c in chanlist:
+            self.log("%s is now known as %s" % (self.oldnickforcallback, params[1]), c)
+        self.oldnickforcallback = ""
 
     # For fun, override the method that determines how a nickname is changed on
     # collisions. The default method appends an underscore.
@@ -174,7 +264,7 @@ class Client(irc.IRCClient):
         self.parent.chan_list.add(row)
         self.channels[channel] = Gtk.TextBuffer.new(None)
 
-
+    # Names command - used for the users list
     def names(self, channel):
         channel = channel.lower()
         d = defer.Deferred()
@@ -207,6 +297,28 @@ class Client(irc.IRCClient):
 
         del self._namescallback[channel]
 
+    # handling for the WHOIS command
+    def performWhois(self, username):
+        username = username.lower()
+        d = defer.Deferred()
+        if username not in self._whoiscallback:
+            self._whoiscallback[username] = ([], [])
+
+        self._whoiscallback[username][0].append(d)
+        self.whois(username)
+        return d
+
+    def irc_RPL_WHOISCHANNELS(self, prefix, params):
+        nickname = params[1].lower()
+        callbacks, namelist = self._whoiscallback[nickname]
+
+        n = self._whoiscallback[nickname][1]
+        n += params
+
+        for cb in callbacks:
+            cb.callback(namelist)
+
+        del self._whoiscallback[nickname]
 
 class IRCFactory(protocol.ClientFactory):
     """A factory for Clients.

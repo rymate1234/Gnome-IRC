@@ -9,10 +9,10 @@ Currently it doesn't have many features.
 You'll need a couple packages installed:
 
  * python-twisted
- * python 2.7
+ * python 2.7 (python 3 doesn't work)
  * python-gi (for debian systems)
  
-Once those are installed you have a couple of options to sue Gnome IRC
+Once those are installed you have a couple of options to use Gnome IRC
 
  * Run it locally - ./gnome-irc should be enough to run Gnome IRC without installing
  * If you wish to install it, run python setup.py install to install it on your PC
