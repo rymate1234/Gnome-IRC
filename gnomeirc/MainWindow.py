@@ -46,67 +46,39 @@ class Client(irc.IRCClient):
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
 
+        builder = Gtk.Builder()
+        builder.add_from_file(DATADIR + "data/main_view.glade")
+        self.message_entry = builder.get_object("message_entry")
+        self.messages_view = builder.get_object("messages")
+        self.messages_scroll = builder.get_object("messages_scroll")
+        self.ircview = builder.get_object("ircviewpane")
+        self.chan_list = builder.get_object("channel_list")
+
         # get some stuff
         self.parent = self.factory.parent
-        self.msg_entry = self.parent.message_entry
+        # self.msg_entry = self.parent.message_entry
 
-        self.addChannel("Server")
+        self.parent.addTab(self.ircview, self.factory.server_name, self)
+
+        self.addChannel(self.factory.server_name)
 
         self.log("[Connected established at %s]" %
-                 time.asctime(time.localtime(time.time())), "Server")
+                 time.asctime(time.localtime(time.time())), self.factory.server_name)
 
 
     def signedOn(self):
         """Called when bot has succesfully signed on to server."""
-        self.log("Successfuly connected!", "Server")
+        self.log("Successfuly connected!", self.factory.server_name)
 
-        self.msg_entry.connect("key-press-event", self.keypress)
-        self.parent.chan_list.connect("row-selected", self.channel_selected)
-        self.parent.messages_view.connect('size-allocate', self.on_new_line)
-
-        # Join Channel Button
-        button = Gtk.Button()
-
-        icon = Gio.ThemedIcon(name="list-add")
-        image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.BUTTON)
-        button.add(image)
-
-        button.connect("clicked", self.on_join_clicked)
-
-        # Users list button
-        button2 = Gtk.Button()
-
-        icon = Gio.ThemedIcon(name="avatar-default-symbolic")
-        image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.BUTTON)
-        button2.add(image)
-
-        self.users_button = button2
-
-        button2.connect("clicked", self.on_users_clicked)
-
-        self.parent.hb.pack_end(button)
-        self.parent.hb.pack_end(button2)
-        self.parent.show_all()
+        self.message_entry.connect("key-press-event", self.keypress)
+        self.chan_list.connect("row-selected", self.channel_selected)
+        self.messages_view.connect('size-allocate', self.on_new_line)
 
         self.join(self.factory.channel)
 
-    def on_join_clicked(self, widget):
-        dialog = ChannelDialog(self.parent)
-        dialog.connect('response', self.dialog_response_join)
-        dialog.show()
-
-
-    def on_users_clicked(self, widget):
-        if not hasattr(self, "users_popover"):
-            builder = Gtk.Builder()
-            builder.add_from_file(DATADIR + "data/users_list.glade")
-            self.users_list = builder.get_object("users_list")
-            self.users_list_container = builder.get_object("users_list_container")
-            self.names(self.selected).addCallback(self.got_users)
-
     def got_users(self, users):
         users.sort()
-        self.users_popover = Gtk.Popover().new(self.users_button)
+        self.users_popover = Gtk.Popover().new(self.parent.users_button)
         self.users_popover.set_border_width(6);
         self.users_popover.set_position(Gtk.PositionType.TOP)
         self.users_popover.set_modal(True)
@@ -172,11 +144,11 @@ class Client(irc.IRCClient):
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
         self.log("[Disconnected at %s]" %
-                 time.asctime(time.localtime(time.time())), "Server")
+                 time.asctime(time.localtime(time.time())), self.factory.server_name)
 
     # callbacks for events
     def keypress(self, widget, event):
-        adj = self.parent.messages_scroll.get_vadjustment()
+        adj = self.messages_scroll.get_vadjustment()
         adj.set_value(adj.get_upper() - adj.get_page_size())
         if event.keyval == 65293:
             self.msg(self.selected, widget.get_text())
@@ -187,7 +159,7 @@ class Client(irc.IRCClient):
 
     def channel_selected(self, widget, selected):
         self.selected = selected.channel
-        self.parent.messages_view.set_buffer(self.channels[selected.channel])
+        self.messages_view.set_buffer(self.channels[selected.channel])
 
     def joined(self, channel):
         self.addChannel(channel)
@@ -195,7 +167,7 @@ class Client(irc.IRCClient):
         self.log("[You have joined %s]" % channel, channel)
 
     def on_new_line(self, widget, event, data=None):
-        adj = self.parent.messages_scroll.get_vadjustment()
+        adj = self.messages_scroll.get_vadjustment()
         adj.set_value(adj.get_upper() - adj.get_page_size())
 
     def privmsg(self, user, channel, msg):
@@ -204,7 +176,7 @@ class Client(irc.IRCClient):
             self.addChannel(channel)  # multiple messages_scrollchannels for znc
 
         if channel == self.selected:
-            adj = self.parent.messages_scroll.get_vadjustment()
+            adj = self.messages_scroll.get_vadjustment()
             adj.set_value(adj.get_upper() - adj.get_page_size())
 
         user = user.split('!', 1)[0]
@@ -261,7 +233,7 @@ class Client(irc.IRCClient):
         button.props.valign = Gtk.Align.CENTER
         hbox.pack_start(button, False, True, 0)
         row.show_all()
-        self.parent.chan_list.add(row)
+        self.chan_list.add(row)
         self.channels[channel] = Gtk.TextBuffer.new(None)
 
     # Names command - used for the users list
@@ -329,31 +301,34 @@ class IRCFactory(protocol.ClientFactory):
     # the class of the protocol to build when new connection is made
     protocol = Client
 
-    def __init__(self, username, channel, password, messages_buffer, chan_list, parent):
+    def __init__(self, username, channel, password, server_name, parent):
         self.channel = channel
         self.username = username
         self.password = password
-        self.chan_list = chan_list
-        self.messages_buffer = messages_buffer
+        self.server_name = server_name
         self.parent = parent
 
     def clientConnectionLost(self, connector, reason):
         """If we get disconnected, show an error."""
-        end_iter = self.messages_buffer.get_end_iter()
-        timestamp = time.strftime("[%H:%M:%S]", time.localtime(time.time()))
-        self.messages_buffer.insert(end_iter, '%s Connection lost! Reason: %s\n' % (timestamp, reason))
+        self.showError('Connection lost! Reason: %s\n' % (reason))
         # connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
-        end_iter = self.messages_buffer.get_end_iter()
-        timestamp = time.strftime("[%H:%M:%S]", time.localtime(time.time()))
-        self.messages_buffer.insert(end_iter, '%s Connection failed! Reason: %s\n' % (timestamp, reason))
-        reactor.stop()
+        self.showError('Connection failed! Reason: %s\n' % (reason))
+        # reactor.stop()
+
+    def showError(self, error):
+        dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR,
+            Gtk.ButtonsType.OK, "Error with connection")
+        dialog.format_secondary_text(
+            error)
+        dialog.show()
 
 
 class MainWindow(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title="Gnome IRC")
+        self.clients = {}
         self.set_border_width(10)
         self.set_default_size(1024, 600)
 
@@ -366,15 +341,32 @@ class MainWindow(Gtk.Window):
         self.connect_button.connect("clicked", self.on_connect_clicked)
         self.hb.pack_start(self.connect_button)
 
-        builder = Gtk.Builder()
-        builder.add_from_file(DATADIR + "data/main_view.glade")
-        self.message_entry = builder.get_object("message_entry")
-        self.messages_view = builder.get_object("messages")
-        self.messages_scroll = builder.get_object("messages_scroll")
-        self.ircview = builder.get_object("ircviewpane")
-        self.chan_list = builder.get_object("channel_list")
+        self.server_tabs = Gtk.Notebook.new()
+        self.add(self.server_tabs)
 
-        self.add(self.ircview)
+        # Join Channel Button
+        button = Gtk.Button()
+
+        icon = Gio.ThemedIcon(name="list-add")
+        image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.BUTTON)
+        button.add(image)
+
+        button.connect("clicked", self.on_join_clicked)
+
+        # Users list button
+        button2 = Gtk.Button()
+
+        icon = Gio.ThemedIcon(name="avatar-default-symbolic")
+        image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.BUTTON)
+        button2.add(image)
+
+        self.users_button = button2
+
+        button2.connect("clicked", self.on_users_clicked)
+
+        self.hb.pack_end(button)
+        self.hb.pack_end(button2)
+        self.show_all()
         self.connect("delete_event", self.on_quit)
 
     def on_connect_clicked(self, widget):
@@ -390,23 +382,58 @@ class MainWindow(Gtk.Window):
             nickname = dialog.nick_entry.get_text()
             password = dialog.password.get_text()
             channel = dialog.channel.get_text()
+            server_name = dialog.server_name.get_text()
 
             dialog.destroy()
 
-            factory = IRCFactory(nickname, channel, password,
-                                 self.messages_view.get_buffer(),
-                                 self.chan_list, self)
+            factory = IRCFactory(nickname, channel, password, server_name, self)
 
             # connect factory to this host and port
             reactor.connectTCP(server, port, factory)
 
             # disable the button once connected, at least until we have a proper multiple server implementation
-            self.connect_button.set_sensitive(False);
-            self.connect_button.set_label("Connected to " + server);
+            # self.connect_button.set_sensitive(False);
+            # self.connect_button.set_label("Connected to " + server);
             win.show_all()
 
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
+
+    def addTab(self, widget, server, client):
+        self.server_tabs.append_page(widget, Gtk.Label(server))
+        self.clients[server] = client
+        self.show_all()
+
+
+    def on_join_clicked(self, widget):
+        if not self.clients:
+            return
+
+        current_client = self.clients[self.get_current_page()]
+
+        dialog = ChannelDialog(self)
+        dialog.connect('response', current_client.dialog_response_join)
+        dialog.show()
+
+
+    def on_users_clicked(self, widget):
+        if not self.clients:
+            return
+
+        current_client = self.clients[self.get_current_page()]
+
+        if not hasattr(current_client, "users_popover"):
+            builder = Gtk.Builder()
+            builder.add_from_file(DATADIR + "data/users_list.glade")
+            current_client.users_list = builder.get_object("users_list")
+            current_client.users_list_container = builder.get_object("users_list_container")
+            current_client.names(current_client.selected).addCallback(current_client.got_users)
+
+    def get_current_page(self):
+        page_num = self.server_tabs.get_current_page()
+        page_widget = self.server_tabs.get_nth_page(page_num)
+        page_name = self.server_tabs.get_tab_label_text(page_widget)
+        return page_name
 
     def on_quit(self, *args):
         #Gtk.main_quit()

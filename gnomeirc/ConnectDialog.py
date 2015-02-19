@@ -18,6 +18,7 @@ class ConnectDialog(Gtk.Dialog):
         builder = Gtk.Builder()
         builder.add_from_file(DATADIR + "data/server.glade")
         self.address_entry = builder.get_object("address")
+        self.server_name = builder.get_object("server_name")
         self.port_entry = builder.get_object("port")
         self.nick_entry = builder.get_object("username")
         self.password = builder.get_object("password")

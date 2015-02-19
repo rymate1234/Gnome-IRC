@@ -13,51 +13,25 @@
     <property name="row_spacing">10</property>
     <property name="column_spacing">10</property>
     <child>
-      <object class="GtkLabel" id="label1">
+      <object class="GtkLabel" id="label6">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="halign">end</property>
-        <property name="label" translatable="yes">Address</property>
+        <property name="label" translatable="yes">Channel</property>
       </object>
       <packing>
         <property name="left_attach">0</property>
-        <property name="top_attach">0</property>
+        <property name="top_attach">6</property>
       </packing>
     </child>
     <child>
-      <object class="GtkLabel" id="label2">
+      <object class="GtkEntry" id="channel">
         <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="halign">end</property>
-        <property name="label" translatable="yes">Port</property>
+        <property name="can_focus">True</property>
       </object>
       <packing>
-        <property name="left_attach">0</property>
-        <property name="top_attach">1</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkLabel" id="label3">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="halign">end</property>
-        <property name="label" translatable="yes">IRC Password</property>
-      </object>
-      <packing>
-        <property name="left_attach">0</property>
-        <property name="top_attach">2</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkLabel" id="label4">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="halign">end</property>
-        <property name="label" translatable="yes">Username</property>
-      </object>
-      <packing>
-        <property name="left_attach">0</property>
-        <property name="top_attach">3</property>
+        <property name="left_attach">1</property>
+        <property name="top_attach">6</property>
       </packing>
     </child>
     <child>
@@ -69,32 +43,53 @@
       </object>
       <packing>
         <property name="left_attach">0</property>
+        <property name="top_attach">5</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkEntry" id="realname">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="hexpand">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">5</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkEntry" id="username">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="hexpand">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
         <property name="top_attach">4</property>
       </packing>
     </child>
     <child>
-      <object class="GtkEntry" id="address">
+      <object class="GtkLabel" id="label4">
         <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="hexpand">True</property>
-        <property name="input_purpose">url</property>
+        <property name="can_focus">False</property>
+        <property name="halign">end</property>
+        <property name="label" translatable="yes">Username</property>
       </object>
       <packing>
-        <property name="left_attach">1</property>
-        <property name="top_attach">0</property>
+        <property name="left_attach">0</property>
+        <property name="top_attach">4</property>
       </packing>
     </child>
     <child>
-      <object class="GtkEntry" id="port">
+      <object class="GtkLabel" id="label3">
         <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="hexpand">True</property>
-        <property name="text" translatable="yes">6667</property>
-        <property name="input_purpose">number</property>
+        <property name="can_focus">False</property>
+        <property name="halign">end</property>
+        <property name="label" translatable="yes">IRC Password</property>
       </object>
       <packing>
-        <property name="left_attach">1</property>
-        <property name="top_attach">1</property>
+        <property name="left_attach">0</property>
+        <property name="top_attach">3</property>
       </packing>
     </child>
     <child>
@@ -109,51 +104,77 @@
       </object>
       <packing>
         <property name="left_attach">1</property>
-        <property name="top_attach">2</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkEntry" id="username">
-        <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="hexpand">True</property>
-      </object>
-      <packing>
-        <property name="left_attach">1</property>
         <property name="top_attach">3</property>
       </packing>
     </child>
     <child>
-      <object class="GtkEntry" id="realname">
+      <object class="GtkEntry" id="port">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="hexpand">True</property>
+        <property name="text" translatable="yes">6667</property>
+        <property name="input_purpose">number</property>
       </object>
       <packing>
         <property name="left_attach">1</property>
-        <property name="top_attach">4</property>
+        <property name="top_attach">2</property>
       </packing>
     </child>
     <child>
-      <object class="GtkLabel" id="label6">
+      <object class="GtkLabel" id="label2">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="halign">end</property>
-        <property name="label" translatable="yes">Channel</property>
+        <property name="label" translatable="yes">Port</property>
       </object>
       <packing>
         <property name="left_attach">0</property>
-        <property name="top_attach">5</property>
+        <property name="top_attach">2</property>
       </packing>
     </child>
     <child>
-      <object class="GtkEntry" id="channel">
+      <object class="GtkLabel" id="label1">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">end</property>
+        <property name="label" translatable="yes">Address</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkEntry" id="address">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="hexpand">True</property>
+        <property name="input_purpose">url</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="lable7">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Server Name</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkEntry" id="server_name">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
       </object>
       <packing>
         <property name="left_attach">1</property>
-        <property name="top_attach">5</property>
+        <property name="top_attach">0</property>
       </packing>
     </child>
   </object>
