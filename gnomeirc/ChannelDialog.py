@@ -9,12 +9,17 @@ elif os.path.dirname(os.path.realpath(__file__)).startswith("/usr/"):
 else:
     DATADIR = ""
 
+if os.environ.get('DESKTOP_SESSION').startswith("gnome"):
+    HEADER_BARS = 1
+else:
+    HEADER_BARS = 0
+
 
 class ChannelDialog(Gtk.Dialog):
     def __init__(self, parent):
         Gtk.Dialog.__init__(self, "Join Channel", parent, 0,
                             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                             Gtk.STOCK_OK, Gtk.ResponseType.OK), use_header_bar=1)
+                             Gtk.STOCK_OK, Gtk.ResponseType.OK), use_header_bar=HEADER_BARS)
 
         builder = Gtk.Builder()
         builder.add_from_file(DATADIR + "data/channel.glade")

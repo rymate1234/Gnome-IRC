@@ -1,5 +1,4 @@
 #!/usr/bin/python2
-
 from twisted.internet import gtk3reactor
 
 from gnomeirc.ChannelDialog import ChannelDialog
@@ -11,7 +10,7 @@ gtk3reactor.install()
 
 from twisted.internet import reactor
 
-from gi.repository import Gtk, Gio, cairo
+from gi.repository import Gtk, Gio, Gdk
 import time, os
 from gnomeirc.ConnectDialog import ConnectDialog
 
@@ -25,6 +24,13 @@ elif os.path.dirname(os.path.realpath(__file__)).startswith("/usr/"):
     DATADIR = "/usr/share/gnome-irc/"
 else:
     DATADIR = ""
+
+css = """
+#toolbar-gnomeirc {
+    border-radius: 0;
+}
+
+"""
 
 class Client(irc.IRCClient):
 
@@ -151,11 +157,25 @@ class Client(irc.IRCClient):
         adj = self.messages_scroll.get_vadjustment()
         adj.set_value(adj.get_upper() - adj.get_page_size())
         if event.keyval == 65293:
-            self.msg(self.selected, widget.get_text())
-            self.log("<%s> %s" % (self.nickname, widget.get_text()), self.selected)
+            self.handle_message(widget.get_text())
             widget.set_text("")
             return True
         return False
+
+    def handle_message(self, message):
+        if message.startswith("/"):
+            cmd_args = message.split(" ")
+            if cmd_args[0] == "/me":
+                message = message.replace("/me ", "")
+                self.describe(self.selected, message)
+                self.log("* %s %s" % (self.nickname, message), self.selected)
+            elif cmd_args[0] == "/join":
+                channel = message.replace("/join ", "")
+                self.join(channel)
+        else:
+            self.msg(self.selected, message)
+            self.log("<%s> %s" % (self.nickname, message), self.selected)
+
 
     def channel_selected(self, widget, selected):
         self.selected = selected.channel
@@ -329,20 +349,44 @@ class MainWindow(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title="Gnome IRC")
         self.clients = {}
-        self.set_border_width(10)
         self.set_default_size(1024, 600)
 
-        self.hb = Gtk.HeaderBar()
-        self.hb.set_show_close_button(True)
-        self.hb.props.title = "Gnome IRC"
-        self.set_titlebar(self.hb)
+        style_provider = Gtk.CssProvider()
+        style_provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            style_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
 
+
+        if os.environ.get('DESKTOP_SESSION').startswith("gnome"):
+            # we're in gnome, so use the gnome UI
+            self.hb = Gtk.HeaderBar()
+            self.hb.set_show_close_button(True)
+            self.hb.props.title = "Gnome IRC"
+            self.set_titlebar(self.hb)
+
+            self.server_tabs = Gtk.Notebook.new()
+            self.add(self.server_tabs)
+
+        else:
+            # not gnome, use the header bar as a toolbar
+            layout = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            self.add(layout)
+
+            self.hb = Gtk.HeaderBar()
+            self.hb.set_name("toolbar-gnomeirc")
+
+            layout.pack_start(self.hb, False, True, 0)
+
+            self.server_tabs = Gtk.Notebook.new()
+            layout.pack_start(self.server_tabs, True, True, 0)
+
+        # add the buttons to the toolbar
         self.connect_button = Gtk.Button("Quick Connect")
         self.connect_button.connect("clicked", self.on_connect_clicked)
         self.hb.pack_start(self.connect_button)
-
-        self.server_tabs = Gtk.Notebook.new()
-        self.add(self.server_tabs)
 
         # Join Channel Button
         button = Gtk.Button()
@@ -367,6 +411,7 @@ class MainWindow(Gtk.Window):
         self.hb.pack_end(button)
         self.hb.pack_end(button2)
         self.show_all()
+
         self.connect("delete_event", self.on_quit)
 
     def on_connect_clicked(self, widget):
