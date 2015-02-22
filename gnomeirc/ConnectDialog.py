@@ -20,7 +20,7 @@ class ConnectDialog(Gtk.Dialog):
     def __init__(self, parent):
         Gtk.Dialog.__init__(self, "Connect to a Server", parent, 0,
                             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                             Gtk.STOCK_OK, Gtk.ResponseType.OK), use_header_bar=HEADE1R_BARS)
+                             Gtk.STOCK_OK, Gtk.ResponseType.OK), use_header_bar=HEADER_BARS)
 
         builder = Gtk.Builder()
         builder.add_from_file(DATADIR + "data/server.glade")
