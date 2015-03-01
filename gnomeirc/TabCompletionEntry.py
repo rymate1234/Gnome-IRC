@@ -27,7 +27,6 @@ class TabCompletionEntry(Gtk.Entry):
     def entry_keypress_cb(self, widget, event):
         text = self.get_text()
         prefix = text.split(" ")[-1]
-        print prefix
 
         if event.keyval == Gdk.KEY_Tab and not event.state & MOD_MASK and (
                     not self.completed):
