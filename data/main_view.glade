@@ -77,9 +77,13 @@
           </packing>
         </child>
         <child>
-          <object class="GtkEntry" id="message_entry">
+          <object class="GtkBox" id="message_entry_container">
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <placeholder/>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>

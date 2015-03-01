@@ -5,6 +5,8 @@ from gnomeirc.ChannelDialog import ChannelDialog
 from gnomeirc.GtkChannelListBoxItem import GtkChannelListBoxItem
 
 from twisted.internet import defer
+from gnomeirc.TabCompletionEntry import TabCompletionEntry
+from gnomeirc.UserList import UserList
 
 gtk3reactor.install()
 
@@ -38,6 +40,7 @@ class Client(irc.IRCClient):
         self._namescallback = {}
         self._whoiscallback = {}
         self.channels = {}
+        self.channel_users = {}
         self.selected = ""
 
     def _get_nickname(self):
@@ -54,15 +57,17 @@ class Client(irc.IRCClient):
 
         builder = Gtk.Builder()
         builder.add_from_file(DATADIR + "data/main_view.glade")
-        self.message_entry = builder.get_object("message_entry")
+        self.message_entry_container = builder.get_object("message_entry_container")
         self.messages_view = builder.get_object("messages")
         self.messages_scroll = builder.get_object("messages_scroll")
         self.ircview = builder.get_object("ircviewpane")
         self.chan_list = builder.get_object("channel_list")
 
+        self.message_entry = TabCompletionEntry(self.update_completion)
+        self.message_entry_container.add(self.message_entry)
+
         # get some stuff
         self.parent = self.factory.parent
-        # self.msg_entry = self.parent.message_entry
 
         self.parent.addTab(self.ircview, self.factory.server_name, self)
 
@@ -82,8 +87,9 @@ class Client(irc.IRCClient):
 
         self.join(self.factory.channel)
 
-    def got_users(self, users):
-        users.sort()
+    def show_users(self):
+        users = self.channel_users[self.selected]
+        users.get_users().sort()
         self.users_popover = Gtk.Popover().new(self.parent.users_button)
         self.users_popover.set_border_width(6);
         self.users_popover.set_position(Gtk.PositionType.TOP)
@@ -136,7 +142,6 @@ class Client(irc.IRCClient):
         del self.users_popover
 
     def dialog_response_join(self, dialog, response):
-
         if response == Gtk.ResponseType.OK:
             channel = dialog.channel.get_text()
 
@@ -156,9 +161,11 @@ class Client(irc.IRCClient):
     def keypress(self, widget, event):
         adj = self.messages_scroll.get_vadjustment()
         adj.set_value(adj.get_upper() - adj.get_page_size())
-        if event.keyval == 65293:
+        if event.keyval == Gdk.KEY_Return:
             self.handle_message(widget.get_text())
             widget.set_text("")
+            return True
+        if event.keyval == Gdk.KEY_Tab:
             return True
         return False
 
@@ -180,6 +187,19 @@ class Client(irc.IRCClient):
     def channel_selected(self, widget, selected):
         self.selected = selected.channel
         self.messages_view.set_buffer(self.channels[selected.channel])
+
+    def update_completion(self, prefix):
+        user_store = Gtk.ListStore(str)
+
+        if self.selected == "":
+            user_store.append([""])
+            return user_store
+
+        for user in self.channel_users[self.selected].get_raw_users():
+            if user.startswith(prefix):
+                user_store.append([user])
+
+        return user_store
 
     def joined(self, channel):
         self.addChannel(channel)
@@ -208,21 +228,14 @@ class Client(irc.IRCClient):
         self.log("* %s %s" % (user, msg), channel)
 
     # irc callbacks
-
     def irc_NICK(self, prefix, params):
         """Called when an IRC user changes their nickname."""
         old_nick = prefix.split('!')[0]
-        self.oldnickforcallback = old_nick
         new_nick = params[0]
-        self.performWhois(new_nick).addCallback(self.got_channels)
-
-    def got_channels(self, params):
-        print params
-        chanlist = params[2].split(' ')
-        for c in chanlist:
-            self.log("%s is now known as %s" % (self.oldnickforcallback, params[1]), c)
-        self.oldnickforcallback = ""
-
+        for channel, users in self.channel_users.iteritems():
+            if users.has_user(old_nick):
+                self.log("%s is now known as %s" % (old_nick, new_nick), channel)
+                users.change_user(old_nick, new_nick)
     # For fun, override the method that determines how a nickname is changed on
     # collisions. The default method appends an underscore.
     def alterCollidedNick(self, nickname):
@@ -272,6 +285,7 @@ class Client(irc.IRCClient):
         nicklist = params[3].split(' ')
 
         if channel not in self._namescallback:
+            self.channel_users[channel] = UserList(nicklist)
             return
 
         n = self._namescallback[channel][1]
@@ -472,7 +486,8 @@ class MainWindow(Gtk.Window):
             builder.add_from_file(DATADIR + "data/users_list.glade")
             current_client.users_list = builder.get_object("users_list")
             current_client.users_list_container = builder.get_object("users_list_container")
-            current_client.names(current_client.selected).addCallback(current_client.got_users)
+            #current_client.names(current_client.selected).addCallback(current_client.got_users)
+            current_client.show_users()
 
     def get_current_page(self):
         page_num = self.server_tabs.get_current_page()
