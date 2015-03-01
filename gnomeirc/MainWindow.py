@@ -211,6 +211,7 @@ class Client(irc.IRCClient):
     def joined(self, channel):
         self.addChannel(channel)
         self.selected = channel
+        self.channel_users[channel] = UserList()
         self.log("[You have joined %s]" % channel, channel)
 
     def on_new_line(self, widget, event, data=None):
@@ -301,18 +302,18 @@ class Client(irc.IRCClient):
         return d
 
     def irc_RPL_NAMREPLY(self, prefix, params):
-        channel = params[2].lower()
+        channel = params[2]
         nicklist = params[3].split(' ')
 
         if channel not in self._namescallback:
-            self.channel_users[channel] = UserList(nicklist)
+            self.channel_users[channel].add_users(nicklist)
             return
 
         n = self._namescallback[channel][1]
         n += nicklist
 
     def irc_RPL_ENDOFNAMES(self, prefix, params):
-        channel = params[1].lower()
+        channel = params[1]
         if channel not in self._namescallback:
             return
 

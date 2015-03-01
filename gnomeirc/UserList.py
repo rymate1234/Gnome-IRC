@@ -1,8 +1,11 @@
 __author__ = 'ryan'
 class UserList(object):
-    def __init__(self, users):
-        self.users = users
+    def __init__(self):
+        self.users = []
         self.raw_users = []
+
+    def add_users(self, users):
+        self.users.extend(users)
         for user in users:
             user = user.replace("@", "").replace("+", "")
             self.raw_users.append(user)
