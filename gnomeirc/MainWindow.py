@@ -80,7 +80,7 @@ class Client(irc.IRCClient):
 
 
     def signedOn(self):
-        """Called when bot has succesfully signed on to server."""
+        """Called when the client has succesfully signed on to server."""
         self.log("Successfuly connected!", self.factory.server_name)
 
         self.message_entry.connect("key-press-event", self.keypress)
@@ -88,6 +88,11 @@ class Client(irc.IRCClient):
         self.messages_view.connect('size-allocate', self.on_new_line)
 
         self.join(self.factory.channel)
+
+    def receivedMOTD(self, motd):
+        """Called when the client gets the motd"""
+        self.log("Server MOTD is: ", self.factory.server_name)
+        self.log("\n".join(motd), self.factory.server_name)
 
     def show_users(self):
         users = self.channel_users[self.selected]
