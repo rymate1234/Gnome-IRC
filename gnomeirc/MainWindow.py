@@ -2,7 +2,7 @@
 from twisted.internet import gtk3reactor
 
 from gnomeirc.ChannelDialog import ChannelDialog
-from gnomeirc.GtkChannelListBoxItem import GtkChannelListBoxItem
+from gnomeirc.GtkChannelListBoxItem import GtkChannelListBoxItem, GtkChannelCloseButton
 
 from twisted.internet import defer
 from gnomeirc.TabCompletionEntry import TabCompletionEntry
@@ -41,6 +41,7 @@ class Client(irc.IRCClient):
         self._whoiscallback = {}
         self.channels = {}
         self.channel_users = {}
+        self.chan_list_items = {}
         self.selected = ""
 
     def _get_nickname(self):
@@ -51,6 +52,7 @@ class Client(irc.IRCClient):
 
     nickname = property(_get_nickname)
     password = property(_get_password)
+    versionName = "GnomeIRC Alpha"
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
@@ -252,22 +254,35 @@ class Client(irc.IRCClient):
 
     def addChannel(self, channel):
         row = GtkChannelListBoxItem(channel)
-        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         row.add(hbox)
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         hbox.pack_start(vbox, True, True, 0)
 
         label1 = Gtk.Label(channel, xalign=0)
-        label2 = Gtk.Label("Some more info text here", xalign=0)
-        vbox.pack_start(label1, True, True, 0)
-        #vbox.pack_start(label2, True, True, 0)
+        vbox.pack_start(label1, True, False, 0)
 
-        button = Gtk.Button("Close")
+        button = GtkChannelCloseButton(channel)
+
         button.props.valign = Gtk.Align.CENTER
-        hbox.pack_start(button, False, True, 0)
+        button.connect("clicked", self.on_close_clicked)
+
+        hbox.pack_start(button, False, False, 0)
         row.show_all()
         self.chan_list.add(row)
         self.channels[channel] = Gtk.TextBuffer.new(None)
+        self.chan_list_items[channel] = row
+        self.chan_list.select_row(row)
+
+    def on_close_clicked(self, widget):
+        chan_list_item = self.chan_list_items[widget.channel]
+        prev_chan_list_item = self.chan_list.get_row_at_index(chan_list_item.get_index() - 1)
+        self.chan_list.remove(chan_list_item)
+        self.part(widget.channel)
+        self.chan_list.show_all()
+        self.selected = ""
+        self.chan_list.select_row(prev_chan_list_item)
+
 
     # Names command - used for the users list
     def names(self, channel):
