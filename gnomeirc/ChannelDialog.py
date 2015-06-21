@@ -1,6 +1,7 @@
 import os
-
+import platform
 from gi.repository import Gtk
+from gnomeirc import Utils
 
 if os.path.dirname(os.path.realpath(__file__)).startswith("/usr/local/"):
     DATADIR = "/usr/local/share/gnome-irc/"
@@ -9,11 +10,10 @@ elif os.path.dirname(os.path.realpath(__file__)).startswith("/usr/"):
 else:
     DATADIR = ""
 
-if os.environ.get('DESKTOP_SESSION').startswith("gnome"):
+if Utils.isGnome():
     HEADER_BARS = 1
 else:
     HEADER_BARS = 0
-
 
 class ChannelDialog(Gtk.Dialog):
     def __init__(self, parent):

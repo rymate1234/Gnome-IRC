@@ -1,5 +1,6 @@
 #!/usr/bin/python2
 from twisted.internet import gtk3reactor
+from gnomeirc import Utils
 
 from gnomeirc.ChannelDialog import ChannelDialog
 from gnomeirc.GtkChannelListBoxItem import GtkChannelListBoxItem, GtkChannelCloseButton
@@ -395,7 +396,7 @@ class MainWindow(Gtk.Window):
         )
 
 
-        if os.environ.get('DESKTOP_SESSION').startswith("gnome"):
+        if Utils.isGnome():
             # we're in gnome, so use the gnome UI
             self.hb = Gtk.HeaderBar()
             self.hb.set_show_close_button(True)
